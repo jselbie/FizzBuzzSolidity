@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+
+<html>
+<head>
+
+    <script src="node_modules/web3/dist/web3.js"></script>
+    <script src="./index.js"></script>
+
+    <script>
+        
+        class WalletControl {
+            constructor(controlId) {
+                this.controlId = controlId;
+                this.control = document.getElementById(controlId);
+                this.labelStatus = this.control.querySelector("#labelStatus");
+                this.labelAccount = this.control.querySelector("#labelAccount");
+                this.connectButton = this.control.querySelector("#connectButton");
+                //this.connectButton.onclick = this._connect.bind(this);
+                this.connectButton.onclick = () => this._connect();
+
+                this.accounts = [];
+
+                this.refresh();
+            }
+
+            async _connect() {
+                if (window.ethereum) {
+                    this.accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    window.primaryAccount = this.accounts && this.accounts[0];
+                    this.refresh();
+                }
+            }
+
+            getDivElement() {
+                return this.control;
+            }
+
+            refresh() {
+                if (window.ethereum) {
+                    if (this.accounts && this.accounts[0]) {
+
+                        // connected status
+                        this.labelStatus.innerHTML = "Connected";
+                        this.labelAccount.innerHTML = this.accounts[0];
+                        this.connectButton.disabled = true;
+                        this.connectButton.innerHTML = "Connect to metamask";
+                    } else{
+                        this.labelStatus.innerHTML = "Not Connected";
+                        this.labelAccount.innerHTML = "";
+                        this.connectButton.disabled = false;
+                        this.connectButton.innerHTML = "Connect to metamask";
+                    }
+                } else {
+                    this.labelStatus.innerHTML = "Not Connected";
+                    this.labelAccount.innerHTML = "Not Connected";
+                    this.connectButton.disabled = false;
+                    this.connectButton.innerHTML = "Install Metamask";
+                }
+            }
+        }
+
+        class FizzBuzzControl {
+            constructor(controlId) {
+                this.controlId = controlId;
+                this.control = document.getElementById(controlId);
+                this.inputText = this.control.querySelector("#inputText");
+                this.submitButton = this.control.querySelector("#submitButton");
+                this.labelLastResult = this.control.querySelector("#labelLastResult");
+                this.getLastButton = this.control.querySelector("#getLastButton");
+
+                this.submitButton.onclick = () => this.onSubmit();
+                this.getLastButton.onclick = () => this.onGetLastButton();
+            }
+
+            async onSubmit() {
+                
+                if (!window.fizzbuzz) {
+                    let addr = FizzBuzzContract.networks[5777].address;
+                    window.fizzbuzz = new web3.eth.Contract(FizzBuzzContract.abi, addr);
+                }
+
+                var val = parseInt(inputText.value) || 0;
+
+                var txResult = await window.fizzbuzz.methods.fizzbuzz(val).send({from:window.primaryAccount});
+
+
+                this.labelLastResult.innerHTML = txResult; // not sure what this will show
+            }
+
+            async onGetLastButton() {
+                if (!window.fizzbuzz) {
+                    let addr = FizzBuzzContract.networks[5777].address;
+                    window.fizzbuzz = new web3.eth.Contract(FizzBuzzContract.abi, addr);
+
+                }
+
+                var tupleResult = await window.fizzbuzz.methods.getLast().call({from:window.primaryAccount});
+                this.labelLastResult.innerHTML = tupleResult[0].toString() + ", " + tupleResult[1].toString();
+
+            }
+
+            refresh() {
+                console.log("refresh");
+            }
+        }
+
+        window.onload = function() {
+
+            console.log("window.onload");
+
+            if (window.ethereum) {
+                window.web3 = new Web3(window.ethereum);
+            }
+
+            window.WalletControl = new WalletControl("wallet");
+            window.FizzBuzzControl = new FizzBuzzControl("fizzbuzzdiv");
+
+        }
+
+
+
+    </script>
+
+
+<body>
+    <div id="wallet" style="padding:10px;border-left: 20px; border-right:20px;border-color: black; border-style: solid; border-width:1px; font-family: Arial, Helvetica, sans-serif; font-size: 20px;">
+        Status: <label id="labelStatus"></label><P/>
+        Account: <label id="labelAccount"></label><P/>
+        <button id="connectButton" type="button">Connect to MetaMask</button><P></P>
+    </div>
+    <P></P>
+    <div id="fizzbuzzdiv" style="padding:10px;border-left: 20px; border-right:20px;border-color: black; border-style: solid; border-width:1px; font-family: Arial, Helvetica, sans-serif; font-size: 20px;">
+        <input id="inputText" type="number"><br/>
+
+        <button id="submitButton" type="button">Submit</button>
+        <button id="getLastButton" type="button">Get Last Result</button><br/>
+        <br/>
+        Last Result: <label id="labelLastResult">.</label>
+    </div>
+
+
+</body>
+
+</head>
+</html>
